@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Lễ Hội Trung Thu - Dành tặng Thanh Tâm</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Marcellus&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg-1: #0b1020; /* deep night */
+      --bg-2: #0f2740; /* horizon */
+      --accent: #ffd27f; /* lantern light */
+      --moon: #fff7d6;
+      --glass: rgba(255,255,255,0.06);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:'Poppins',system-ui,Arial;overflow:hidden}
+
+    /* Background sky */
+    .sky{
+      position:fixed;inset:0;background:radial-gradient(circle at 10% 10%, #1b2b4a 0%, var(--bg-1) 40%, var(--bg-2) 100%);
+      display:flex;align-items:center;justify-content:center;flex-direction:column;padding:30px;gap:20px
+    }
+
+    /* twinkling stars canvas placed behind everything */
+    #starfield{position:fixed;inset:0;z-index:0}
+
+    header{z-index:3;text-align:center;color:var(--moon);text-shadow:0 4px 20px rgba(0,0,0,0.6)}
+    header h1{font-family:'Marcellus';margin:0;font-size:36px;letter-spacing:1px}
+    header p{margin:6px 0 0;opacity:0.9}
+
+    /* moon */
+    .moon-wrap{position:fixed;right:8vw;top:8vh;z-index:3}
+    .moon{width:180px;height:180px;border-radius:50%;background:linear-gradient(180deg,var(--moon),#fff0);box-shadow:0 0 80px 12px rgba(255,220,140,0.06), inset -18px -22px 40px rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:center;cursor:pointer;transform:translateZ(0)}
+    .craters{position:relative;width:84%;height:84%;border-radius:50%}
+    .crater{position:absolute;background:rgba(0,0,0,0.06);border-radius:50%}
+    .crater.c1{width:18px;height:18px;left:20%;top:26%}
+    .crater.c2{width:32px;height:32px;left:52%;top:36%}
+    .crater.c3{width:22px;height:22px;left:46%;top:62%}
+
+    /* lantern container */
+    .lanterns{position:fixed;left:5vw;bottom:6vh;width:40vw;height:60vh;pointer-events:none;z-index:2}
+    .lantern{position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:48px;padding:6px 8px;border-radius:10px;background:linear-gradient(180deg,#ffb46c,#ff7a5c);box-shadow:0 8px 30px rgba(255,120,60,0.12);text-align:center;color:#2b0700;font-weight:600;font-size:12px;letter-spacing:0.2px}
+    .flame{width:8px;height:14px;border-radius:50%;position:absolute;left:50%;transform:translateX(-50%);bottom:-8px;box-shadow:0 0 20px rgba(255,200,100,0.9)}
+
+    /* controls */
+    .controls{position:fixed;left:24px;bottom:24px;z-index:4;display:flex;gap:10px;align-items:flex-end}
+    .card{background:var(--glass);backdrop-filter:blur(6px);padding:12px;border-radius:12px;min-width:260px;color:var(--moon);box-shadow:0 6px 24px rgba(0,0,0,0.45)}
+    .card label{display:block;font-size:12px;margin-bottom:6px;opacity:0.9}
+    .card input[type=text]{width:100%;padding:8px;border-radius:8px;border:0;background:rgba(255,255,255,0.03);color:var(--moon);outline:none}
+    .card .row{display:flex;gap:8px;margin-top:8px}
+    .btn{cursor:pointer;padding:8px 12px;border-radius:8px;border:0;background:linear-gradient(180deg,#ffcf88,#ff9b6b);font-weight:600}
+    .tiny{font-size:12px;padding:6px 8px}
+
+    /* modal (mooncake) */
+    .modal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:9;opacity:0;pointer-events:none;transition:all .25s}
+    .modal.open{opacity:1;pointer-events:auto}
+    .cake{background:linear-gradient(180deg,#fff8e6,#ffe8b8);padding:24px;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,0.6);text-align:center}
+    .cake h2{margin:0 0 6px;font-family:'Marcellus';color:#4b2b00}
+    .fireworks{position:fixed;inset:0;pointer-events:none;z-index:8}
+
+    /* footer message */
+    .footer-msg{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;color:rgba(255,255,255,0.9);z-index:4;font-size:13px}
+
+    /* responsive */
+    @media (max-width:700px){
+      .moon{width:120px;height:120px}
+      header h1{font-size:24px}
+      .controls{left:12px;right:12px;bottom:12px}
+      .card{min-width:unset;width:calc(100% - 48px)}
+    }
+
+    /* subtle glows */
+    .glow{position:fixed;left:60px;bottom:180px;width:220px;height:220px;border-radius:50%;filter:blur(40px);opacity:0.08;background:radial-gradient(circle,#ffd27f 0,#ff9b6b 40%,transparent 70%);z-index:1}
+
+  </style>
+</head>
+<body>
+  <div class="sky">
+    <canvas id="starfield"></canvas>
+    <header>
+      <h1>Trung Thu Vui Vẻ</h1>
+      <p>Gửi tặng em yêu — Thả đèn, thả thính, thả(?) trăng</p>
+    </header>
+
+    <div class="moon-wrap" title="Bấm để mở bánh Trung Thu">
+      <div class="moon" id="moon">
+        <div class="craters">
+          <div class="crater c1"></div>
+          <div class="crater c2"></div>
+          <div class="crater c3"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lanterns" id="lanterns"></div>
+    <div class="glow"></div>
+
+    <div class="controls">
+      <div class="card">
+        <label for="wish">Ghi lời ước (max: 60 ký tự)</label>
+        <input id="wish" type="text" maxlength="60" placeholder="Ví dụ: Yêu em đến trọn đời ❤️">
+        <div class="row" style="margin-top:8px;align-items:center">
+          <select id="color" style="padding:8px;border-radius:8px;border:0;background:rgba(255,255,255,0.03);color:var(--moon)">
+            <option value="#ffb46c">Vàng ấm</option>
+            <option value="#ffd27f">Kem</option>
+            <option value="#ff8aa1">Hồng</option>
+            <option value="#a1ffcf">Xanh nhạt</option>
+            <option value="#c8b7ff">Tím mơ</option>
+          </select>
+          <button class="btn" id="release">Thả đèn</button>
+        </div>
+      </div>
+
+      <div class="card" style="width:170px;text-align:center">
+        <div style="font-size:13px;opacity:0.9">Âm thanh</div>
+        <div style="margin-top:8px;display:flex;gap:6px;justify-content:center">
+          <button class="tiny" id="playTone">Play</button>
+          <button class="tiny" id="stopTone">Stop</button>
+        </div>
+        <div style="margin-top:8px;font-size:12px;opacity:0.8">(bấm mặt trăng để mở bánh Trung Thu)</div>
+      </div>
+    </div>
+
+    <div class="footer-msg">Made with ♥ — Chúc Tâm Trung Thu vui vẻ!</div>
+
+    <div class="modal" id="modal">
+      <div class="cake" role="dialog" aria-modal="true">
+        <h2>Bánh Trung Thu</h2>
+        <p style="opacity:0.85;margin:6px 0 10px">Cắn yêu một miếng nè.</p>
+        <button class="btn" id="sendLove">Gửi lời yêu</button>
+        <div style="margin-top:10px;color:#6b4f2b;font-size:13px;opacity:0.9">♥ Anh yêu em nhiều ♥</div>
+      </div>
+    </div>
+
+    <canvas class="fireworks" id="fw"></canvas>
+  </div>
+
+<script>
+// ---------- Starfield (canvas) ----------
+const canvas = document.getElementById('starfield');
+const ctx = canvas.getContext('2d');
+function resize(){canvas.width=innerWidth;canvas.height=innerHeight}
+addEventListener('resize',resize);resize();
+let stars=[];
+function initStars(){stars=[];const count=Math.floor((innerWidth*innerHeight)/6000);for(let i=0;i<count;i++){stars.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.2+0.2,a:Math.random()*0.8+0.2,dx:(Math.random()-0.5)*0.04,dy:(Math.random()-0.5)*0.02})}}
+initStars();
+function drawStars(){ctx.clearRect(0,0,canvas.width,canvas.height);for(const s of stars){ctx.globalAlpha=s.a;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle='white';ctx.fill();s.x+=s.dx; s.y+=s.dy; if(s.x<0) s.x=canvas.width; if(s.x>canvas.width) s.x=0; if(s.y<0) s.y=canvas.height; if(s.y>canvas.height) s.y=0}ctx.globalAlpha=1}
+function twinkle(){for(const s of stars){s.a = 0.4+Math.sin(Date.now()/1000 + s.x*0.001)*0.4}}
+(function animStars(){twinkle();drawStars();requestAnimationFrame(animStars)})();
+
+// ---------- Lantern system ----------
+const lanternsEl = document.getElementById('lanterns');
+let lanternId = 0;
+function spawnLantern(text='#', color='#ffb46c', xPct=50, speed=0.6){
+  const id = 'l'+(lanternId++);
+  const el = document.createElement('div'); el.className='lantern'; el.id=id;
+  el.style.left = xPct+'%';
+  el.style.background = `linear-gradient(180deg, ${shadeColor(color,20)}, ${shadeColor(color,-10)})`;
+  el.innerHTML = `<div style="padding-top:6px;padding-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px">${escapeHtml(text)}</div><div class='flame' style='background: radial-gradient(circle,#fff 0%, ${accentOf(color)} 40%, transparent 60%)'></div>`;
+  lanternsEl.appendChild(el);
+  // animate upward with random drift
+  const start = performance.now();
+  const duration = 12000/speed + Math.random()*7000; // ms
+  const startLeft = el.offsetLeft;
+  const drift = (Math.random()-0.5)*200; // px drift
+  function frame(t){
+    const p = Math.min(1,(t-start)/duration);
+    el.style.bottom = (p*110)+'%';
+    el.style.transform = `translateX(-50%) translateX(${drift*p}px)`;
+    el.style.opacity = 1 - p*0.35;
+    if(p<1) requestAnimationFrame(frame); else { el.remove(); }
+  }
+  requestAnimationFrame(frame);
+}
+
+// helper functions
+function shadeColor(col, percent){ // col in #rrggbb
+  const f = parseInt(col.slice(1),16), t = percent<0?0:255, p=Math.abs(percent)/100;
+  const R = Math.round((t - (f>>16))*p) + (f>>16);
+  const G = Math.round((t - (f>>8 & 0x00FF))*p) + (f>>8 & 0x00FF);
+  const B = Math.round((t - (f & 0x0000FF))*p) + (f & 0x0000FF);
+  return `rgb(${R},${G},${B})`;
+}
+function accentOf(col){return col}
+function escapeHtml(str){return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+// release button
+const input = document.getElementById('wish');
+const colorSelect = document.getElementById('color');
+document.getElementById('release').addEventListener('click',()=>{
+  const text = input.value.trim() || 'Chúc em Trung Thu vui vẻ!';
+  const color = colorSelect.value;
+  // random horizontal location
+  const x = 10 + Math.random()*80;
+  spawnLantern(text, color, x, 0.7 + Math.random()*0.9);
+  input.value='';
+});
+
+// spawn some decorative lanterns automatically
+setInterval(()=>{spawnLantern('❤', ['#ffb46c','#ffd27f','#ff8aa1','#a1ffcf','#c8b7ff'][Math.floor(Math.random()*5)], 8 + Math.random()*18, 0.5 + Math.random()*0.9)}, 1800);
+setInterval(()=>{spawnLantern('❤', ['#ffb46c','#ffd27f','#ff8aa1','#a1ffcf','#c8b7ff'][Math.floor(Math.random()*5)], 82 - Math.random()*18, 0.6 + Math.random()*0.6)}, 2200);
+
+// ---------- Moon modal & fireworks ----------
+const moon = document.getElementById('moon');
+const modal = document.getElementById('modal');
+const fwCanvas = document.getElementById('fw');
+const fwCtx = fwCanvas.getContext('2d');
+function resizeFW(){fwCanvas.width=innerWidth;fwCanvas.height=innerHeight}
+addEventListener('resize',resizeFW);resizeFW();
+moon.addEventListener('click',()=>{modal.classList.add('open'); launchFireworks(); playChime();});
+modal.addEventListener('click',(e)=>{if(e.target===modal) modal.classList.remove('open');});
+
+function launchFireworks(){
+  const fireworks=[];
+  function spawn(){
+    const count=6+Math.floor(Math.random()*8);
+    const cx = innerWidth*0.5*(0.4+Math.random()*1.2);
+    const cy = innerHeight*0.35*(0.25+Math.random()*0.9);
+    const colors=['#ffef9f','#ffd27f','#ff8aa1','#a1ffcf','#c8b7ff'];
+    for(let i=0;i<count;i++){
+      fireworks.push({x:cx,y:cy,vx:(Math.random()-0.5)*6,vy:(Math.random()-0.5)*6,life:60+Math.random()*60,color:colors[Math.floor(Math.random()*colors.length)]});
+    }
+  }
+  let t0=0;function step(){fwCtx.clearRect(0,0,fwCanvas.width,fwCanvas.height);
+    for(let i=fireworks.length-1;i>=0;i--){const f=fireworks[i]; f.x+=f.vx; f.y+=f.vy; f.vy+=0.05; f.life--; fwCtx.globalAlpha=Math.max(0,f.life/90); fwCtx.beginPath(); fwCtx.fillStyle=f.color; fwCtx.arc(f.x,f.y,Math.max(1,f.life/12),0,Math.PI*2); fwCtx.fill(); if(f.life<=0) fireworks.splice(i,1)}
+    if(Math.random()<0.06) spawn();
+    requestAnimationFrame(step);
+  }
+  step();
+}
+
+// ---------- WebAudio simple chime ----------
+let audioCtx=null,osc=null,env=null;
+function ensureAudio(){if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();}}
+function playChime(){ensureAudio(); const now=audioCtx.currentTime; const master=audioCtx.createGain(); master.connect(audioCtx.destination); master.gain.value=0.8;
+  const freqs=[523.25,659.25,783.99,1046.5];
+  let t=now; freqs.forEach((f,i)=>{const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type='sine'; o.frequency.value=f; o.connect(g); g.connect(master); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.16,t+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+0.9); o.start(t); o.stop(t+1.0); t += 0.12;});
+}
+function startTone(){ensureAudio(); if(audioCtx.state==='suspended') audioCtx.resume(); // continuous gentle synth
+  osc = audioCtx.createOscillator(); env = audioCtx.createGain(); osc.type='sine'; osc.frequency.value=220; osc.connect(env); env.connect(audioCtx.destination); env.gain.value=0; osc.start(); env.gain.linearRampToValueAtTime(0.06,audioCtx.currentTime+0.6);
+}
+function stopTone(){if(env){env.gain.exponentialRampToValueAtTime(0.0001,audioCtx.currentTime+0.6); setTimeout(()=>{try{osc.stop()}catch(e){} osc=null; env=null},800)} }
+
+document.getElementById('playTone').addEventListener('click',()=>{ensureAudio(); startTone();});
+document.getElementById('stopTone').addEventListener('click',()=>{stopTone();});
+
+document.getElementById('sendLove').addEventListener('click',()=>{
+  // create a special lantern with a love message and close modal
+  spawnLantern('Anh yêu em', '#ff8aa1', 50, 1.2);
+  modal.classList.remove('open');
+});
+
+// ---------- small accessibility and autospawn ----------
+// spawn a few lanterns at load for spectacle
+for(let i=0;i<6;i++){setTimeout(()=>spawnLantern(['Chúc em','Yêu em','Trăng đẹp','Gửi yêu'][Math.floor(Math.random()*4)], ['#ffb46c','#ffd27f','#ff8aa1','#a1ffcf'][Math.floor(Math.random()*4)], 10+Math.random()*80, 0.5+Math.random()), i*400)}
+
+// ---------- small helpers to ensure crisp rendering ----------
+(function fixDpi(){const dpr = Math.max(1, window.devicePixelRatio || 1); document.querySelectorAll('canvas').forEach(c=>{c.width = c.clientWidth * dpr; c.height = c.clientHeight * dpr; const ctx = c.getContext('2d'); if(ctx) ctx.scale(dpr,dpr);});})();
+
+// ---------- end script ----------
+</script>
+</body>
+</html>
